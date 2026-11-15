@@ -1,29 +1,5 @@
 # Supermercado a domicilio con MCP
 
-Solucion del ejercicio propuesto en la pagina 20 de la guia de laboratorio: un chatbot que usa un servidor MCP para realizar pedidos de supermercado y persistirlos en una base de datos. El ejemplo de tareas de la guia sirve de referencia arquitectonica; este proyecto implementa productos y pedidos.
-
-## Arquitectura
-
-```mermaid
-flowchart LR
-    Usuario --> Web[Host: interfaz web de ADK]
-    Web --> Agente[Agente Java con Gemini]
-    Agente --> Cliente[Cliente MCP: McpToolset]
-    Cliente <-->|Streamable HTTP| Servidor[Spring Boot + Spring AI]
-    Servidor --> Tools[Herramientas: metodos con Tool]
-    Tools --> Servicios[Reglas de negocio y transacciones]
-    Servicios --> JPA[Spring Data JPA]
-    JPA --> DB[(PostgreSQL)]
-```
-
-- **Host:** ADK web ofrece la conversacion; el agente decide que herramientas necesita usando Gemini.
-- **Cliente MCP:** `McpToolset` negocia el protocolo, descubre herramientas e invoca el servidor.
-- **Servidor MCP:** Spring Boot publica el endpoint `/mcp` y convierte las llamadas en operaciones Java.
-- **Herramienta:** cada metodo anotado con `@Tool` tiene una descripcion y un esquema de argumentos.
-- **Persistencia:** productos, borradores, pedidos y detalles se almacenan en PostgreSQL. Las conversaciones de ADK son de desarrollo y no se consideran almacenamiento permanente.
-
-El servidor no necesita una clave de Gemini. La clave se utiliza exclusivamente en el proyecto del agente. No hay conexion JDBC desde el agente.
-
 ## 1. Proyecto inicial y requisitos
 
 | Componente | Version / configuracion |
@@ -231,16 +207,6 @@ cd D:\Dev\mcp_lab\supermercado-agente
 Las pruebas del servidor crean PostgreSQL efimero mediante Testcontainers, independiente del volumen de desarrollo. Cubren migraciones, busquedas, cantidades, precios conservados, totales, validaciones, transacciones, cancelacion, idempotencia, dos compras concurrentes por la ultima unidad y llamadas MCP reales por HTTP.
 
 El agente no tiene una suite propia de pruebas automatizadas; su compilacion no usa Gemini. El objetivo `exec:java@mcp-check` comprueba su integracion con el servidor levantado y tampoco necesita clave. La conversacion con el modelo requiere una clave valida y disponibilidad del proveedor.
-
-## 9. Seguridad y diferencias con la guia
-
-Una herramienta HTTP sin autenticacion permite consultar o cambiar pedidos a cualquier cliente que pueda alcanzar el endpoint. En este laboratorio se restringe a loopback y se usan datos ficticios. Para exponerlo fuera del equipo harian falta autenticacion, autorizacion por propietario de pedido y TLS; conocer un `pedidoId` no es autorizacion.
-
-Los secretos se mantienen en variables de entorno y `.env` ignorado. No se registran contrasenas ni claves en las respuestas de herramientas. El chatbot no recibe acceso SQL arbitrario.
-
-Cambios frente al ejemplo: PostgreSQL en lugar de MySQL, Java 17, versiones compatibles actualizadas, un puerto consistente por servicio, migraciones Flyway, reglas de pedidos y pruebas de concurrencia. Las siete herramientas de tareas del ejemplo se sustituyen por ocho herramientas del supermercado.
-
-Claude Desktop podria consumir este mismo servidor mediante un cliente o puente compatible; se reutilizarian sin cambios las herramientas, servicios, repositorios y base de datos. La implementacion entregada usa ADK como cliente, con un agente Java configurable y su interfaz web.
 
 ## Referencias
 
