@@ -1,0 +1,19 @@
+name: mcp-lab-supermercado
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: supermercado
+      POSTGRES_USER: ${DB_USERNAME:-supermercado}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Configura DB_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:${DB_PORT:-55433}:5432"
+    volumes:
+      - supermercado-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d supermercado"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  supermercado-data:
